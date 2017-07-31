@@ -6,9 +6,13 @@ import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
 
+def get_location_svc_url(config):
+    return config.get("url", "http://localhost:5000")
+
 @match_apiai_action("labby.lab.setlocation")
 async def where_are_you(opsdroid, config, message):
     """Ask users where they are."""
+    location_svc_url = get_location_svc_url(config)
     if not message.apiai["result"]["parameters"]["location"]:
         await message.respond("Pardon?")
     else:
@@ -16,7 +20,7 @@ async def where_are_you(opsdroid, config, message):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    'https://locate.informaticslab.co.uk/user/{}'.format(message.user),
+                    '{}/user/{}'.format(location_svc_url, message.user),
                     json={'location': location},
                     headers={"Authorization": "Bearer {}".format(config["auth-token"])}) as resp:
                     if resp.status >= 400:
@@ -35,11 +39,12 @@ async def where_are_you(opsdroid, config, message):
 @match_apiai_action("labby.lab.getlocation")
 async def where_is_labby(opsdroid, config, message):
     """Say where a user is."""
+    location_svc_url = get_location_svc_url(config)
     if not message.apiai["result"]["parameters"]["person"]:
         await message.respond("Who?")
     else:
         person = message.apiai["result"]["parameters"]["person"]
         async with aiohttp.ClientSession() as session:
-            async with session.get('https://locate.informaticslab.co.uk/user/{}'.format(person)) as resp:
+            async with session.get('{}/user/{}'.format(location_svc_url, person)) as resp:
                 location = await resp.json()
                 await message.respond("{} is in the {}".format(person, location["location"]))

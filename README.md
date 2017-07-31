@@ -10,7 +10,10 @@ An instance of the [lab-location-service](https://github.com/met-office-lab/lab-
 
 ```yaml
 - name: location
+  # Required
   auth-token: aabbcc112233  # Auth token set for the lab-location-service
+  # Optional
+  url: http://localhost:5000  # Url of the lab-location-service server
 ```
 
 ## Usage
