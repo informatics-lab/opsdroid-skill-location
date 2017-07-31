@@ -1,32 +1,35 @@
-# opsdroid skill hello
+# opsdroid skill lab location
 
-A skill for [opsdroid](https://github.com/opsdroid/opsdroid) to respond to hello and goodbye messages.
+A skill for [opsdroid](https://github.com/opsdroid/opsdroid) to record and request lab member locations. For use with the [lab-location-service](https://github.com/met-office-lab/lab-location-service).
 
 ## Requirements
 
-None.
+An instance of the [lab-location-service](https://github.com/met-office-lab/lab-location-service).
 
 ## Configuration
 
-None.
+```yaml
+- name: location
+  auth-token: aabbcc112233  # Auth token set for the lab-location-service
+```
 
 ## Usage
 
-#### `hello`
+#### `I am working from home.`
 
-Says hello to the user.
+Sets your location to 'home' in the [lab-location-service](https://github.com/met-office-lab/lab-location-service).
 
-> user: hello
+> user: I am working from home.
 >
-> opsdroid: Hi user
+> opsdroid: Ah thanks! I've updated your location to 'Home'.
 
-#### `goodbye`
+#### `Where is Bob?`
 
-Says goodbye to the user.
+Tell you where Bob is, if Bob has told opsdroid.
 
-> user: bye
+> user: Where is Bob?
 >
-> opsdroid: Bye user
+> opsdroid: Bob is at home.
 
 ## License
 

@@ -1,16 +1,45 @@
-from opsdroid.matchers import match_regex
+from opsdroid.matchers import match_apiai_action
 import logging
 import random
 
-def setup(opsdroid):
-    logging.debug("Loaded hello module")
+import aiohttp
 
-@match_regex(r'hi|hello|hey|hallo')
-async def hello(opsdroid, config, message):
-    text = random.choice(["Hi {}", "Hello {}", "Hey {}"]).format(message.user)
-    await message.respond(text)
+_LOGGER = logging.getLogger(__name__)
 
-@match_regex(r'bye( bye)?|see y(a|ou)|au revoir|gtg|I(\')?m off')
-async def goodbye(opsdroid, config, message):
-    text = random.choice(["Bye {}", "See you {}", "Au revoir {}"]).format(message.user)
-    await message.respond(text)
+@match_apiai_action("labby.lab.setlocation")
+async def where_are_you(opsdroid, config, message):
+    """Ask users where they are."""
+    if not message.apiai["result"]["parameters"]["location"]:
+        await message.respond("Pardon?")
+    else:
+        location = message.apiai["result"]["parameters"]["location"].capitalize()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    'https://locate.informaticslab.co.uk/user/{}'.format(message.user),
+                    json={'location': location},
+                    headers={"Authorization": "Bearer {}".format(config["auth-token"])}) as resp:
+                    if resp.status >= 400:
+                        raise ValueError("Bad return code %i", resp.status)
+                    else:
+                        _LOGGER.info("Set location of %s to %s", message.user, location)
+                        await message.respond("Ah thanks! I've updated your location to '{}'".format(location))
+        except (ValueError, aiohttp.client_exceptions.ClientConnectorError) as e:
+            _LOGGER.error(e)
+            await message.respond("Hmm I couldn't update you location, try again later.")
+        except KeyError as e:
+            _LOGGER.error(e)
+            await message.respond("Sorry can't do that! You need to set an 'auth-token' in the config.")
+
+
+@match_apiai_action("labby.lab.getlocation")
+async def where_is_labby(opsdroid, config, message):
+    """Say where a user is."""
+    if not message.apiai["result"]["parameters"]["person"]:
+        await message.respond("Who?")
+    else:
+        person = message.apiai["result"]["parameters"]["person"]
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://locate.informaticslab.co.uk/user/{}'.format(person)) as resp:
+                location = await resp.json()
+                await message.respond("{} is in the {}".format(person, location["location"]))
